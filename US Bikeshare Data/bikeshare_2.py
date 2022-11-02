@@ -7,6 +7,7 @@ CITY_DATA = {
     'new york': 'new_york_city.csv',
     'washington': 'washington.csv'
 }
+
 MONTHS = [
     "JAN", "FEB", "MAR", "APRIL", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT",
     "NOV", "DEC"
@@ -27,21 +28,24 @@ def get_filters():
     print('Hello! Let\'s explore some US bikeshare data!')
     # get user input for city (chicago, new york city, washington). HINT: Use a while loop to handle invalid inputs
     while True:
-        city = input("Enter city name\n").strip().lower()
+        city = input(f"Enter the city name in {tuple(CITY_DATA.keys())}\n").strip().lower()
         if city in CITY_DATA.keys(): break
+        print("Please enter a valid city name")
 
     # get user input for month (all, january, february, ... , june)
     while True:
-        month = input(f"Enter the month in {MONTHS} or all\n").strip().upper()
-        if month in MONTHS or month == "all": break
+        month = input(f"Enter the month in {tuple(MONTHS)} or all\n").strip().upper()
+        if month in MONTHS or month == "ALL": break
+        print("Please enter a valid month")
 
     # get user input for day of week (all, monday, tuesday, ... sunday)
     while True:
-        day = input(f"Enter the day in {DAYS} or all\n").strip().upper()
-        if day in DAYS or day == 'all': break
+        day = input(f"Enter the day in {tuple(DAYS)} or all\n").strip().upper()
+        if day in DAYS or day == "ALL": break
+        print("Please enter a valid day")
 
     print('-' * 40, )
-    print(f"You Picked {city=}, {month=}, {day=}")
+    print(f"You Picked {city}, {month}, {day}")
     print('-' * 40, )
 
     return city, month, day
@@ -63,9 +67,9 @@ def load_data(city, month, day):
 
     df["month"] = df["Start Time"].dt.month
     df["day"] = df["Start Time"].dt.day
-
-    df = df[df["day"] == DAYS.index(day) + 1]
-    df = df[df["month"] == MONTHS.index(month) + 1]
+    
+    df = df[df["day"] == DAYS.index(day) + 1] if day != "ALL" else df
+    df = df[df["month"] == MONTHS.index(month) + 1] if month != "ALL" else df
     return df.drop(["month", "day"], axis=1)
 
 
@@ -108,7 +112,7 @@ def station_stats(df: pd.DataFrame):
     # display most frequent combination of start station and end station trip
     print(
         "the most frequent combination of start station and end station trip: ",
-        df[["Start Station", "End Station"]].value_counts().idxmax())
+        pd.value_counts(df[["Start Station", "End Station"]].values.flatten()).idxmax())
 
     print("\nThis took %s seconds." % (time.time() - start_time))
     print('-' * 40)
@@ -140,16 +144,19 @@ def user_stats(df: pd.DataFrame):
     start_time = time.time()
 
     # Display counts of user types
-    print("counts of user types:\n", df["User Type"].value_counts(), sep="")
+    if "User Type" in df.columns:    
+        print("counts of user types:\n", df["User Type"].value_counts(), sep="")
 
     # Display counts of gender
-    print("counts of gender:\n", df["Gender"].value_counts(), sep="")
+    if "Gender" in df.columns:
+        print("counts of gender:\n", df["Gender"].value_counts(), sep="")
 
     # Display earliest, most recent, and most common year of birth
-    print("Year of birth stats: ")
-    print("\tearliest: {}\n\tmost recent: {},\n\tmost common: {}".format(
-        df["Birth Year"].min(), df["Birth Year"].max(),
-        df["Birth Year"].value_counts().idxmax()))
+    if "Birth Year" in df.columns:
+        print("Year of birth stats: ")
+        print("\tearliest: {}\n\tmost recent: {},\n\tmost common: {}".format(
+            df["Birth Year"].min(), df["Birth Year"].max(),
+            df["Birth Year"].value_counts().idxmax()))
 
     print("\nThis took %s seconds." % (time.time() - start_time))
     print('-' * 40)
@@ -159,7 +166,7 @@ def main():
     while True:
         city, month, day = get_filters()
         df = load_data(city, month, day)
-
+        
         time_stats(df)
         station_stats(df)
         trip_duration_stats(df)
